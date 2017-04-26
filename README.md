@@ -1,3 +1,3 @@
 # basher
 
-My own cllect of bash scripts
+My own collection of bash scripts
