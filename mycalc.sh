@@ -13,6 +13,7 @@ ARGS="-N -B"
 chng=0
 aft=1
 now=1
+
 while getopts ":S:an" opt
 do
 	case $opt in
