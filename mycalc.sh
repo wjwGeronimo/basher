@@ -2,9 +2,11 @@
 
 fn_usage() {
 	echo -e "$0: Calculate memory usage from MySQL variables"
+	echo -e "\t\t-h this help"
 	echo -e "\t\t-S For connections to localhost, the Unix socket file to use"
 	echo -e "\t\t-n Show Memory usage of Running instance"
 	echo -e "\t\t-a Show Memory usage after MySQL Restart"
+	echo -e "\t\t-c Path to my.cnf"
 	exit 0
 }
 
@@ -17,14 +19,14 @@ now=1
 
 CNF_FILE="/etc/my.cnf"
 
-while getopts ":S:anc:" opt
+while getopts ":S:anc:h" opt
 do
 	case $opt in
 		S) [[ -e ${OPTARG} ]] && T_SOCK=${OPTARG} && schng=1 || echo "No such sock-file" ;;
 		a) [[ ${chng} -eq 0 ]] && now=0 && chng=1 || aft=1;;
 		n) [[ ${chng} -eq 0 ]] && aft=0 && chng=1 || now=1;;
 		c) [[ -f ${OPTARG} ]] && CNF_FILE=${OPTARG};;
-		*) fn_usage;;
+		h|*) fn_usage;;
 	esac
 done
 
