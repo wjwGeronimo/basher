@@ -3,7 +3,7 @@
 fn_usage() {
 	echo -e "$0: Calculate memory usage from MySQL variables"
 	echo -e "\t\t-S For connections to localhost, the Unix socket file to use"
-	echo -e "\t\t-n Show Memory usage of this Run"
+	echo -e "\t\t-n Show Memory usage of Running instance"
 	echo -e "\t\t-a Show Memory usage after MySQL Restart"
 	exit 0
 }
@@ -14,12 +14,12 @@ chng=0
 aft=1
 now=1
 
-SOCK=`sed -n '/\[client\]/,/\[/p' /etc/my.cnf | grep socket | cut -f 2 -d "=" | cut -f 1 -d "#"`
+SOCK=`sed -n '/\[client\]/,/\[/p' /etc/my.cnf | grep socket | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 
 while getopts ":S:an" opt
 do
 	case $opt in
-		S) [[ -e ${OPTARG} ]]&&ARGS=${ARGS}" -S "${OPTARG}&&SOCK=${OPTARG}||echo "No such sock-file";;
+		S) [[ -e ${OPTARG} ]]&&ARGS=${ARGS}" -S "${OPTARG}&&SOCK=${OPTARG}||echo "No such sock-file; Using ${SOCK}";;
 		a) [[ ${chng} -eq 0 ]] && now=0 && chng=1 || aft=1;;
 		n) [[ ${chng} -eq 0 ]] && aft=0 && chng=1 || now=1;;
 		*) fn_usage;;
