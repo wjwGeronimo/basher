@@ -10,21 +10,31 @@ fn_usage() {
 
 ARGS="-N -B"
 
+schng=0
 chng=0
 aft=1
 now=1
 
-SOCK=`sed -n '/\[client\]/,/\[/p' /etc/my.cnf | grep socket | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+CNF_FILE="/etc/my.cnf"
 
-while getopts ":S:an" opt
+while getopts ":S:anc:" opt
 do
 	case $opt in
-		S) [[ -e ${OPTARG} ]]&&ARGS=${ARGS}" -S "${OPTARG}&&SOCK=${OPTARG}||echo "No such sock-file; Using ${SOCK}";;
+		S) [[ -e ${OPTARG} ]] && T_SOCK=${OPTARG} && schng=1 || echo "No such sock-file" ;;
 		a) [[ ${chng} -eq 0 ]] && now=0 && chng=1 || aft=1;;
 		n) [[ ${chng} -eq 0 ]] && aft=0 && chng=1 || now=1;;
+		c) [[ -f ${OPTARG} ]] && CNF_FILE=${OPTARG};;
 		*) fn_usage;;
 	esac
 done
+
+if [[ ${schng} -eq 1 ]]
+then
+	SOCK=${T_SOCK}
+	ARGS=${ARGS}" -S "${SOCK}
+else
+	SOCK=`sed -n '/\[client\]/,/\[/p' ${CNF_FILE} | grep socket | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+fi
 
 declare -A LIST1=(
 ["tmp_table_size"]=16777216
@@ -62,13 +72,13 @@ fn_now() {
 }
 
 fn_after() {
-	DCNT=`grep mysqld /etc/my.cnf | grep -v mysqldump | wc -l`
+	DCNT=`grep mysqld ${CNF_FILE} | grep -v mysqldump | wc -l`
 	if [[ ${DCNT} -gt 1 ]]
 	then
-		DMNS=`grep mysqld /etc/my.cnf | grep -v mysqldump | tr -d [=\[=] | tr -d [=\]=]`
+		DMNS=`grep mysqld ${CNF_FILE} | grep -v mysqldump | tr -d [=\[=] | tr -d [=\]=]`
 		for dmn in ${DMNS}
 		do
-			CHE=`sed -n "/\[${dmn}\]/,/\[/p" /etc/my.cnf | grep ${SOCK}`
+			CHE=`sed -n "/\[${dmn}\]/,/\[/p" ${CNF_FILE} | grep ${SOCK}`
 			[[ -z ${CHE} ]] || WDMN=${dmn}
 		done
 	fi
@@ -77,10 +87,10 @@ fn_after() {
 	do
 		if [[ ${DCNT} -eq 1 ]]
 		then
-			var=`egrep "^${k}" /etc/my.cnf | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+			var=`egrep "^${k}" ${CNF_FILE} | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 		elif [[ ${DCNT} -gt 1 ]]
 		then
-			var=`sed -n "/\[${WDMN}\]/,/\[/p" /etc/my.cnf | egrep "^${k}" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+			var=`sed -n "/\[${WDMN}\]/,/\[/p" ${CNF_FILE} | egrep "^${k}" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 		fi
 		[[ "${var}" =~ "k" || "${var}" =~ "kb" ]] && var=`echo ${var} | tr -d [:alpha:]` && var=$((var*1024))
 		[[ "${var}" =~ "M" || "${var}" =~ "Mb" ]] && var=`echo ${var} | tr -d [:alpha:]` && var=$((var*1024*1024))
@@ -92,10 +102,10 @@ fn_after() {
 	do
 		if [[ ${DCNT} -eq 1 ]]
 		then
-			var=`egrep "^${k}" /etc/my.cnf | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+			var=`egrep "^${k}" ${CNF_FILE} | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 		elif [[ ${DCNT} -gt 1 ]]
 		then
-			var=`sed -n "/\[${WDMN}\]/,/\[/p" /etc/my.cnf | egrep "^${k}" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+			var=`sed -n "/\[${WDMN}\]/,/\[/p" ${CNF_FILE} | egrep "^${k}" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 		fi
 		[[ "${var}" =~ "k" || "${var}" =~ "kb" ]] && var=`echo ${var} | tr -d [:alpha:]` && var=$((var*1024))
 		[[ "${var}" =~ "M" || "${var}" =~ "Mb" ]] && var=`echo ${var} | tr -d [:alpha:]` && var=$((var*1024*1024))
@@ -106,10 +116,10 @@ fn_after() {
 	CNF_MCON=151
 	if [[ ${DCNT} -eq 1 ]]
 	then
-		var=`egrep "^max_connections" /etc/my.cnf | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+		var=`egrep "^max_connections" ${CNF_FILE} | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 	elif [[ ${DCNT} -gt 1 ]]
 	then
-		var=`sed -n "/\[${WDMN}\]/,/\[/p" /etc/my.cnf | egrep "^max_connections" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
+		var=`sed -n "/\[${WDMN}\]/,/\[/p" ${CNF_FILE} | egrep "^max_connections" | cut -f 2 -d "=" | cut -f 1 -d "#" | tr -d [:blank:]`
 	fi
 	[[ -z ${var} ]] || CNF_MCON=${var}
 
